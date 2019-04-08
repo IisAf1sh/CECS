@@ -1,0 +1,66 @@
+package com.experiment.util;
+
+
+import android.util.Base64;
+
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+
+import javax.crypto.*;
+
+public class EncryptUtils {
+
+	public static KeyPair setupRSA() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        SecureRandom secureRandom = new SecureRandom(String.valueOf(System.currentTimeMillis()).getBytes());
+        keyPairGenerator.initialize(2048, secureRandom);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        return keyPair;
+    }
+	
+	public static PublicKey string2PublicKey(String pubStr) throws NoSuchAlgorithmException, InvalidKeySpecException{
+		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decode(pubStr,Base64.NO_WRAP));
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PublicKey publicKey = keyFactory.generatePublic(keySpec);
+        return publicKey;
+    }
+
+    public static PrivateKey string2Privatekey(String priStr) throws NoSuchAlgorithmException, InvalidKeySpecException{
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decode(priStr,Base64.NO_WRAP));
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+        return privateKey;
+    }
+
+	public static byte[] encryptRSA(byte[] content, PublicKey publicKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        byte[] bytes = cipher.doFinal(content);
+        return bytes;
+    }
+
+    public static byte[] decryptRSA(byte[] content, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] bytes = cipher.doFinal(content);
+        return bytes;
+    }
+
+    public static byte[] hash(byte[] str) throws NoSuchAlgorithmException {
+    	MessageDigest md = MessageDigest.getInstance("SHA-256");
+    	md.update(str);
+    	byte[] bytes= md.digest();
+    	return bytes;
+    }
+    
+    public static byte[] signature(byte[] content, PrivateKey privateKey) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+    	Signature signature = Signature.getInstance("SHA256withRSA");
+		signature.initSign(privateKey);
+		signature.update(content);
+		byte[] bytes = signature.sign();
+		return bytes;
+    }
+
+}
