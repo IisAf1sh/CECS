@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="26.0.1"
+        sha1="3be78ebc2706b2e1fe2f12d5726887a92d6c183b">
+        <dex dex="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run_729ba37ef69f2034a5b8da7a5cd06488c3792bd1\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\libs\jpbc-plaf-2.0.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="26.0.1"
+        sha1="9d1150d72ddcb4ffdc8beb5d2a5fb4c13ffe2b11">
+        <dex dex="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\transforms\dex\debug\folders\1000\2\jpbc-plaf-2.0.0_9829dafc8c3da78e0a68fa8c9c9103292a789ad8\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\libs\jpbc-api-2.0.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="26.0.1"
+        sha1="d8e504f54d7deb8af641d22ac6b9bb5d22e6f188">
+        <dex dex="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\transforms\dex\debug\folders\1000\2\jpbc-api-2.0.0_57577983db87bdf998aa40e553e1ee94fb925a97\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="26.0.1"
+        sha1="b96824ccf4a00ff5f3bf46bd187c8ff57f919810">
+        <dex dex="C:\Users\Administrator\AndroidStudioProjects\CECSClient\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run-bootstrap_8dc28d37f3227d072aa6afff912723c69368df33\classes.dex" />
+    </item>
+
+</items>
