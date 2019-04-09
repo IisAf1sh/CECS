@@ -17,6 +17,9 @@ import org.json.JSONArray;
 import java.net.Socket;
 import java.io.*;
 import java.security.KeyPair;
+import java.security.PublicKey;
+
+import javax.crypto.SecretKey;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
@@ -66,20 +69,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 try {
                     spchs=new SPCHS();
                     spchs.setup();
-                    Log.d("CECSClient","connect");
                     socket = new Socket("202.114.6.201", 8080);
+                    br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                     JSONObject jobject=new JSONObject();
-                    jobject.put("g",spchs.getG().toBytes().toString());
-                    jobject.put("P",spchs.getP().toBytes().toString());
-                    jobject.put("u",spchs.getU().toBytes().toString());
-                    jobject.put("Pub",spchs.getPub().toBytes().toString());
-                    jobject.put("Pt",spchs.getPt().toBytes().toString());
+                    jobject.put("g",Base64.encodeToString(spchs.getG().toBytes(),Base64.NO_WRAP));
+                    jobject.put("P",Base64.encodeToString(spchs.getP().toBytes(),Base64.NO_WRAP));
+                    jobject.put("u",Base64.encodeToString(spchs.getU().toBytes(),Base64.NO_WRAP));
+                    jobject.put("Pub",Base64.encodeToString(spchs.getPub().toBytes(),Base64.NO_WRAP));
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
-                    Log.d("CECSClient",jobject.toString());
+                    Log.d("CECSClient","setup");
                 } catch (Exception e){
-                    Log.d("CECSClient",e.toString());
                     e.printStackTrace();
                 }
             }
@@ -108,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.d("CECSClient",jobject.toString());
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
-                    socket.close();
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -125,9 +125,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     jobject.put("request","sharing request");
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
-                    String str=br.readLine();
-                    show(str);
-                    socket.close();
+                    Log.d("CECSClient",jobject.toString());
+                    String CK=br.readLine();
+                    Log.d("CECSClient",CK);
+                    byte[] k=EncryptUtils.decryptRSA(Base64.decode(CK.getBytes(),Base64.NO_WRAP),keyPairR.getPrivate());
+                    String K=Base64.encodeToString(EncryptUtils.decryptRSA(Base64.decode(CK.getBytes(),Base64.NO_WRAP),keyPairR.getPrivate()),Base64.NO_WRAP);
+                    bw.write(K+"\n");
+                    bw.flush();
+                    Log.d("CECSClient",K);
+                    String tuples=br.readLine();
+                    show(tuples);
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -158,7 +165,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return null;
         }
         File[] files = f.listFiles();
-        Log.d("CECSClient",files.toString());
         if(files==null) {
             return null;
         }

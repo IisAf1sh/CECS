@@ -8,6 +8,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 public class EncryptUtils {
 	public static SecretKey setupAES() throws NoSuchAlgorithmException {
@@ -16,6 +17,11 @@ public class EncryptUtils {
         keyGen.init(256, secureRandom);
         SecretKey secretKey = keyGen.generateKey();
         return secretKey;
+    }
+	
+	public static SecretKey string2SecretKey(String SecStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(SecStr),"AES");
+        return keySpec;
     }
 
 	public static byte[] encryptAES(byte[] content, SecretKey secretKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {

@@ -9,8 +9,33 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 public class EncryptUtils {
+    public static SecretKey setupAES() throws NoSuchAlgorithmException {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        SecureRandom secureRandom = new SecureRandom(String.valueOf(System.currentTimeMillis()).getBytes());
+        keyGen.init(256, secureRandom);
+        SecretKey secretKey = keyGen.generateKey();
+        return secretKey;
+    }
+
+    public static SecretKey string2SecretKey(String SecStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        SecretKeySpec keySpec = new SecretKeySpec(Base64.decode(SecStr,Base64.NO_WRAP),"AES");
+        return keySpec;
+    }
+
+    public static byte[] encryptAES(byte[] content, SecretKey secretKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        return cipher.doFinal(content);
+    }
+
+    public static byte[] decryptAES(byte[] content, SecretKey secretKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        return cipher.doFinal(content);
+    }
 
 	public static KeyPair setupRSA() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");

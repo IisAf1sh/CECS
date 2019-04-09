@@ -4,13 +4,12 @@ package com.experiment.entity;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,23 +35,21 @@ public class Cloud {
             Socket s = serverSocket.accept();  
             BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream())); 
         	String str=br.readLine();
-        	System.out.println(str);
         	JSONObject jobject=new JSONObject(str);
         	spchs=new SPCHS();
         	spchs.setup();
         	Element g=spchs.getG1().newElement();
-        	g.setFromBytes(jobject.getString("g").getBytes());
+        	g.setFromBytes(Base64.getDecoder().decode(jobject.getString("g").getBytes()));
         	spchs.setG(g);
-        	g.setFromBytes(jobject.getString("P").getBytes());
-        	spchs.setP(g);
-        	g.setFromBytes(jobject.getString("u").getBytes());
-        	spchs.setU(g);
-        	g.setFromBytes(jobject.getString("Pub").getBytes());
-        	spchs.setPub(g);
-        	g.setFromBytes(jobject.getString("Pt").getBytes());
-        	spchs.setPt(g);
-        	System.out.println(spchs.getG().toBytes().toString());
-        	System.out.println(spchs.getPub().toBytes().toString());
+        	Element P=spchs.getG1().newElement();
+        	P.setFromBytes(Base64.getDecoder().decode(jobject.getString("P").getBytes()));
+        	spchs.setP(P);
+        	Element u=spchs.getG1().newElement();
+        	u.setFromBytes(Base64.getDecoder().decode(jobject.getString("u").getBytes()));
+        	spchs.setU(u);
+        	Element Pub=spchs.getG1().newElement();
+        	Pub.setFromBytes(Base64.getDecoder().decode(jobject.getString("Pub").getBytes()));
+        	spchs.setPub(Pub);
             while (true) {  
                 Socket socket = serverSocket.accept();  
                 new HandlerThread(socket);  
@@ -79,6 +76,7 @@ public class Cloud {
                 String request = jobject.getString("request");
                 switch(request){
                 case "uploading request": 
+                	String PKO=jobject.getString("PKO");
                 	JSONArray jarray1=jobject.getJSONArray("tuples");
                 	for(int i=0;i<jarray1.length();i++) {
                 		jobject=jarray1.getJSONObject(i);
@@ -89,6 +87,7 @@ public class Cloud {
                 			peksObject.put("id", id);
                 			peks.put(peksObject.getString("C1"), peksObject.toString());
                 		}
+                		jobject.put("PKO", PKO);
                 		tuples.add(jobject.toString());
                 		id++;
                 		System.out.println(jobject.toString());
@@ -96,11 +95,14 @@ public class Cloud {
 		            break;		
                 case "sharing request": 
                 	JSONArray jarray2=new JSONArray();
-                	jarray2.put(tuples);
-                	JSONObject json=new JSONObject();
-                	json.put("tuples", jarray2);
-                	bw.write(json.toString()+"\n");
+                	for(String s:tuples) {
+                		jarray2.put(new JSONObject(s));
+                	}
+                	JSONObject jobject2=new JSONObject();
+                	jobject2.put("tuples", jarray2);
+                	bw.write(jobject2.toString()+"\n");
                 	bw.flush();
+                	System.out.println(jobject2.toString());
 		            break;		              
                 case "searching request": 
                 	

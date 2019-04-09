@@ -1,5 +1,6 @@
 package com.experiment.util;
 
+import android.util.Base64;
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -18,12 +19,12 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
  * Created by Administrator on 2019/4/8.
  */
 
-public class SPCHS implements Serializable{
+public class SPCHS {
     private Pairing pairing;
     private Field G1,GT,Zr;
     private Element g,s,P,u,Pub,Pt;
     public void setup(){
-        pairing= PairingFactory.getPairing("/sdcard/a.properties");
+        pairing= PairingFactory.getPairing("sdcard/a.properties");
         PairingFactory.getInstance().setUsePBCWhenPossible(true);
         G1=pairing.getG1();
         GT=pairing.getGT();
@@ -35,7 +36,7 @@ public class SPCHS implements Serializable{
         Pt=null;
         Pub=g.powZn(u);
     }
-    public JSONObject encryption(String W,Element Pt){
+    public JSONObject encryption(Element P,String W,Element u){
         JSONObject jobject=new JSONObject();
         Element r=Zr.newRandomElement().getImmutable();
         if(Pt==null){
@@ -46,9 +47,9 @@ public class SPCHS implements Serializable{
                 Element C1=pairing.pairing(P,HW).powZn(u);
                 Element C2=g.powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(Pt);
-                jobject.put("C1",C1);
-                jobject.put("C2",C2);
-                jobject.put("C3",C3);
+                jobject.put("C1", Base64.encodeToString(C1.toBytes(),Base64.NO_WRAP));
+                jobject.put("C2",Base64.encodeToString(C2.toBytes(),Base64.NO_WRAP));
+                jobject.put("C3",Base64.encodeToString(C3.toBytes(),Base64.NO_WRAP));
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -62,9 +63,10 @@ public class SPCHS implements Serializable{
                 Element C1=Pt;
                 Element C2=g.powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(R);
-                jobject.put("C1",C1);
-                jobject.put("C2",C2);
-                jobject.put("C3",C3);
+                Pt=R;
+                jobject.put("C1", Base64.encodeToString(C1.toBytes(),Base64.NO_WRAP));
+                jobject.put("C2",Base64.encodeToString(C2.toBytes(),Base64.NO_WRAP));
+                jobject.put("C3",Base64.encodeToString(C3.toBytes(),Base64.NO_WRAP));
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -86,14 +88,14 @@ public class SPCHS implements Serializable{
     public ArrayList search(Element Pub,HashMap<String,String> CW,Element TW){
         ArrayList<Integer> id=new ArrayList<>();
         Element Pt2=pairing.pairing(Pub,TW);
-        while(CW.containsKey(Pt2.toBytes().toString())){
+        while(CW.containsKey(Base64.encodeToString(Pt2.toBytes(),Base64.NO_WRAP))){
             try {
-                JSONObject jobject = new JSONObject(CW.get(Pt2.toBytes().toString()));
+                JSONObject jobject = new JSONObject(CW.get(Base64.encodeToString(Pt2.toBytes(),Base64.NO_WRAP)));
                 id.add(jobject.getInt("id"));
                 Element C2=G1.newElement();
-                C2.setFromBytes(jobject.getString("C2").getBytes());
+                C2.setFromBytes(Base64.decode(jobject.getString("C2").getBytes(),Base64.NO_WRAP));
                 Element C3=G1.newElement();
-                C3.setFromBytes(jobject.getString("C3").getBytes());
+                C3.setFromBytes(Base64.decode(jobject.getString("C3").getBytes(),Base64.NO_WRAP));
                 Pt2=pairing.pairing(C2,TW).pow(new BigInteger("-1")).mul(C3);
             }
             catch (Exception e){
@@ -182,5 +184,4 @@ public class SPCHS implements Serializable{
     public void setPt(Element pt) {
         Pt = pt;
     }
-
 }
