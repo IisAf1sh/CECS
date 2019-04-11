@@ -2,6 +2,7 @@ package com.experiment.util;
 
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -28,10 +29,10 @@ public class SPCHS {
         Zr=pairing.getZr();
         g=G1.newRandomElement().getImmutable();
         s=Zr.newRandomElement().getImmutable();
-        P=g.powZn(s);
+        P=g.powZn(s).getImmutable();
         u=Zr.newRandomElement().getImmutable();
         Pt=null;
-        Pub=g.powZn(u);
+        Pub=g.powZn(u).getImmutable();
     }
     public JSONObject encryption(Element P,String W,Element u){
         JSONObject jobject=new JSONObject();
@@ -43,10 +44,11 @@ public class SPCHS {
                 Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
                 Element C1=pairing.pairing(P,HW).powZn(u);
                 Element C2=g.powZn(r);
+                System.out.println("Pt"+pairing.pairing(P,HW).powZn(r).toString());
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(Pt);
-                jobject.put("C1",Base64.getEncoder().encodeToString(C1.toBytes()));
-                jobject.put("C2",Base64.getEncoder().encodeToString(C2.toBytes()));
-                jobject.put("C3",Base64.getEncoder().encodeToString(C3.toBytes()));
+                jobject.put("C1",new String(Base64.getEncoder().encode(C1.toBytes()),"UTF-8"));
+                jobject.put("C2",new String(Base64.getEncoder().encode(C2.toBytes()),"UTF-8"));
+                jobject.put("C3",new String(Base64.getEncoder().encode(C3.toBytes()),"UTF-8"));
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -57,13 +59,15 @@ public class SPCHS {
             try{
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
                 Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
-                Element C1=Pt;
+                Element C1=Pt.duplicate();
+                System.out.println("C1"+C1.toString());
                 Element C2=g.powZn(r);
+                System.out.println("Pt"+pairing.pairing(P,HW).powZn(r).toString());
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(R);
-                Pt=R;
-                jobject.put("C1",Base64.getEncoder().encodeToString(C1.toBytes()));
-                jobject.put("C2",Base64.getEncoder().encodeToString(C2.toBytes()));
-                jobject.put("C3",Base64.getEncoder().encodeToString(C3.toBytes()));
+                Pt=R.duplicate();
+                jobject.put("C1",new String(Base64.getEncoder().encode(C1.toBytes()),"UTF-8"));
+                jobject.put("C2",new String(Base64.getEncoder().encode(C2.toBytes()),"UTF-8"));
+                jobject.put("C3",new String(Base64.getEncoder().encode(C3.toBytes()),"UTF-8"));
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -75,30 +79,38 @@ public class SPCHS {
         Element TW=null;
         try {
             byte[] bytes = EncryptUtils.hash(W.getBytes());
-            TW= G1.newElement().setFromHash(bytes,0,bytes.length);
+            TW= G1.newElement().setFromHash(bytes,0,bytes.length).powZn(s).getImmutable();
         }
         catch (Exception e){
             e.printStackTrace();
         }
         return TW;
     }
-    public ArrayList search(Element Pub,HashMap<String,String> CW,Element TW){
+    public ArrayList<Integer> search(Element Pub,HashMap<String,String> CW,Element TW) throws UnsupportedEncodingException{
         ArrayList<Integer> id=new ArrayList<>();
         Element Pt2=pairing.pairing(Pub,TW);
-        while(CW.containsKey(Base64.getEncoder().encodeToString(Pt2.toBytes()))){
+        String str;
+        while(CW.containsKey((str=new String(Base64.getEncoder().encode(Pt2.toBytes()),"UTF-8")))){
             try {
-                JSONObject jobject = new JSONObject(CW.get(Base64.getEncoder().encodeToString(Pt2.toBytes())));
+                JSONObject jobject = new JSONObject(CW.get(str));
                 id.add(jobject.getInt("id"));
                 Element C2=G1.newElement();
-                C2.setFromBytes(Base64.getDecoder().decode(jobject.getString("C2").getBytes()));
-                Element C3=G1.newElement();
-                C3.setFromBytes(Base64.getDecoder().decode(jobject.getString("C3").getBytes()));
-                Pt2=pairing.pairing(C2,TW).pow(new BigInteger("-1")).mul(C3);
+                C2.setFromBytes(Base64.getDecoder().decode(jobject.getString("C2").getBytes("UTF-8")));
+                Element C3=GT.newElement();
+                C3.setFromBytes(Base64.getDecoder().decode(jobject.getString("C3").getBytes("UTF-8")));
+                System.out.println("Pt"+pairing.pairing(C2,TW).toString());
+                Pt2=C3.div(pairing.pairing(C2,TW));
+                Element Pt=GT.newElement();
+                Pt.setFromBytes(Base64.getDecoder().decode(str));
+                System.out.println(Pt.toString());
             }
             catch (Exception e){
                 e.printStackTrace();
             }
         }
+        Element Pt=GT.newElement();
+        Pt.setFromBytes(Base64.getDecoder().decode(str));
+        System.out.println(Pt.toString());
         return id;
     }
 

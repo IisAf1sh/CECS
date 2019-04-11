@@ -1,6 +1,7 @@
 package com.experiment.util;
 
 
+import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -19,8 +20,8 @@ public class EncryptUtils {
         return secretKey;
     }
 	
-	public static SecretKey string2SecretKey(String SecStr) throws NoSuchAlgorithmException, InvalidKeySpecException {
-		SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(SecStr),"AES");
+	public static SecretKey string2SecretKey(String SecStr) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
+		SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(SecStr.getBytes("UTF-8")),"AES");
         return keySpec;
     }
 
@@ -39,34 +40,34 @@ public class EncryptUtils {
 	public static KeyPair setupRSA() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         SecureRandom secureRandom = new SecureRandom(String.valueOf(System.currentTimeMillis()).getBytes());
-        keyPairGenerator.initialize(2048, secureRandom);
+        keyPairGenerator.initialize(1024, secureRandom);
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
         return keyPair;
     }
 	
-	public static PublicKey string2PublicKey(String pubStr) throws NoSuchAlgorithmException, InvalidKeySpecException{
-		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pubStr));
+	public static PublicKey string2PublicKey(String pubStr) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException{
+		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pubStr.getBytes("UTF-8")));
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PublicKey publicKey = keyFactory.generatePublic(keySpec);
         return publicKey;
     }
 
-    public static PrivateKey string2Privatekey(String priStr) throws NoSuchAlgorithmException, InvalidKeySpecException{
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(priStr));
+    public static PrivateKey string2Privatekey(String priStr) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException{
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(priStr.getBytes("UTF-8")));
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
         return privateKey;
     }
 
 	public static byte[] encryptRSA(byte[] content, PublicKey publicKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         byte[] bytes = cipher.doFinal(content);
         return bytes;
     }
 
     public static byte[] decryptRSA(byte[] content, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] bytes = cipher.doFinal(content);
         return bytes;

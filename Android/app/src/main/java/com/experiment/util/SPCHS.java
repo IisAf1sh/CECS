@@ -1,12 +1,9 @@
 package com.experiment.util;
 
 import android.util.Base64;
-import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -24,17 +21,17 @@ public class SPCHS {
     private Field G1,GT,Zr;
     private Element g,s,P,u,Pub,Pt;
     public void setup(){
-        pairing= PairingFactory.getPairing("sdcard/a.properties");
+        pairing= PairingFactory.getPairing("assets/a.properties");
         PairingFactory.getInstance().setUsePBCWhenPossible(true);
         G1=pairing.getG1();
         GT=pairing.getGT();
         Zr=pairing.getZr();
         g=G1.newRandomElement().getImmutable();
         s=Zr.newRandomElement().getImmutable();
-        P=g.powZn(s);
+        P=g.powZn(s).getImmutable();
         u=Zr.newRandomElement().getImmutable();
         Pt=null;
-        Pub=g.powZn(u);
+        Pub=g.powZn(u).getImmutable();
     }
     public JSONObject encryption(Element P,String W,Element u){
         JSONObject jobject=new JSONObject();
@@ -60,10 +57,10 @@ public class SPCHS {
             try{
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
                 Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
-                Element C1=Pt;
+                Element C1=Pt.duplicate();
                 Element C2=g.powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(R);
-                Pt=R;
+                Pt=R.duplicate();
                 jobject.put("C1", Base64.encodeToString(C1.toBytes(),Base64.NO_WRAP));
                 jobject.put("C2",Base64.encodeToString(C2.toBytes(),Base64.NO_WRAP));
                 jobject.put("C3",Base64.encodeToString(C3.toBytes(),Base64.NO_WRAP));
@@ -78,7 +75,7 @@ public class SPCHS {
         Element TW=null;
         try {
             byte[] bytes = EncryptUtils.hash(W.getBytes());
-            TW= G1.newElement().setFromHash(bytes,0,bytes.length);
+            TW= G1.newElement().setFromHash(bytes,0,bytes.length).powZn(s);
         }
         catch (Exception e){
             e.printStackTrace();
@@ -94,9 +91,9 @@ public class SPCHS {
                 id.add(jobject.getInt("id"));
                 Element C2=G1.newElement();
                 C2.setFromBytes(Base64.decode(jobject.getString("C2").getBytes(),Base64.NO_WRAP));
-                Element C3=G1.newElement();
+                Element C3=GT.newElement();
                 C3.setFromBytes(Base64.decode(jobject.getString("C3").getBytes(),Base64.NO_WRAP));
-                Pt2=pairing.pairing(C2,TW).pow(new BigInteger("-1")).mul(C3);
+                Pt2=GT.newOneElement().div(pairing.pairing(C2,TW)).mul(C3);
             }
             catch (Exception e){
                 e.printStackTrace();

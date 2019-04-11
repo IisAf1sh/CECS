@@ -40,7 +40,7 @@ public class EncryptUtils {
 	public static KeyPair setupRSA() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         SecureRandom secureRandom = new SecureRandom(String.valueOf(System.currentTimeMillis()).getBytes());
-        keyPairGenerator.initialize(2048, secureRandom);
+        keyPairGenerator.initialize(1024, secureRandom);
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
         return keyPair;
     }
@@ -60,14 +60,14 @@ public class EncryptUtils {
     }
 
 	public static byte[] encryptRSA(byte[] content, PublicKey publicKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         byte[] bytes = cipher.doFinal(content);
         return bytes;
     }
 
     public static byte[] decryptRSA(byte[] content, PrivateKey privateKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] bytes = cipher.doFinal(content);
         return bytes;

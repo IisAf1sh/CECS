@@ -14,17 +14,22 @@ import com.experiment.util.SPCHS;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.io.*;
 import java.security.KeyPair;
-import java.security.PublicKey;
+import java.util.Arrays;
 
-import javax.crypto.SecretKey;
+import it.unisa.dia.gas.jpbc.Element;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     EditText editText;
-    JSONArray tuples =new JSONArray();
+    JSONArray tuples;
     KeyPair keyPairO;
     KeyPair keyPairR;
     Socket socket;
@@ -95,17 +100,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     jobject.put("request","uploading request");
                     jobject.put("PKO",Base64.encodeToString(keyPairO.getPublic().getEncoded(),Base64.NO_WRAP));
                     jobject.put("PKR",Base64.encodeToString(keyPairR.getPublic().getEncoded(),Base64.NO_WRAP));
+                    byte[] PKR=keyPairR.getPublic().getEncoded();
                     //String path=editText.getText().toString();
                     String path="/sdcard/CECSClientData";
                     jobject.put("tuples",getTuples(path));
-                    /*JSONObject data=new JSONObject();
-                    data.put("data",path);
-                    data.put("keywords","keyword");
-                    Log.d("CECSClient",EncryptUtils.signature(path.getBytes(),keyPairO.getPrivate()).toString());
-                    data.put("Sig",Base64.encodeToString(EncryptUtils.signature(path.getBytes(),keyPairO.getPrivate()),Base64.NO_WRAP));
-                    tuples=new JSONArray();
-                    tuples.put(data);
-                    jobject.put("tuples",tuples);*/
                     Log.d("CECSClient",jobject.toString());
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
@@ -126,13 +124,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
                     Log.d("CECSClient",jobject.toString());
-                    String CK=br.readLine();
-                    Log.d("CECSClient",CK);
-                    byte[] k=EncryptUtils.decryptRSA(Base64.decode(CK.getBytes(),Base64.NO_WRAP),keyPairR.getPrivate());
-                    String K=Base64.encodeToString(EncryptUtils.decryptRSA(Base64.decode(CK.getBytes(),Base64.NO_WRAP),keyPairR.getPrivate()),Base64.NO_WRAP);
-                    bw.write(K+"\n");
+                    String ck=br.readLine();
+                    JSONArray CK=new JSONObject(ck).getJSONArray("CK");
+                    JSONArray K=new JSONArray();
+                    for(int i=0;i<CK.length();i++) {
+                        ck=Base64.encodeToString(EncryptUtils.decryptRSA(Base64.decode(CK.getString(i), Base64.NO_WRAP), keyPairR.getPrivate()), Base64.NO_WRAP);
+                        K.put(ck);
+                    }
+                    JSONObject k=new JSONObject();
+                    k.put("K",K);
+                    bw.write(k.toString()+"\n");
                     bw.flush();
-                    Log.d("CECSClient",K);
                     String tuples=br.readLine();
                     show(tuples);
                 }
@@ -146,7 +148,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         new Thread(new Runnable() {
             @Override
             public void run() {
-
+                try {
+                    JSONObject jobject=new JSONObject();
+                    jobject.put("request","searching request");
+                    Element TW=spchs.trapdoor(spchs.getS(),"keyword");
+                    jobject.put("TW",Base64.encodeToString(TW.toBytes(),Base64.NO_WRAP));
+                    Log.d("CECSClient:TW",Arrays.toString(TW.toBytes()));
+                    bw.write(jobject.toString()+"\n");
+                    bw.flush();
+                    Log.d("CECSClient",jobject.toString());
+                    String ck=br.readLine();
+                    JSONArray CK=new JSONObject(ck).getJSONArray("CK");
+                    JSONArray K=new JSONArray();
+                    for(int i=0;i<CK.length();i++) {
+                        ck=Base64.encodeToString(EncryptUtils.decryptRSA(Base64.decode(CK.getString(i), Base64.NO_WRAP), keyPairR.getPrivate()), Base64.NO_WRAP);
+                        K.put(ck);
+                    }
+                    JSONObject k=new JSONObject();
+                    k.put("K",K);
+                    bw.write(k.toString()+"\n");
+                    bw.flush();
+                    String tuples=br.readLine();
+                    show(tuples);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
@@ -154,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                Log.d("CECSClient",str);
                 editText.setText(str);
             }
         });
@@ -168,6 +196,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if(files==null) {
             return null;
         }
+        tuples=new JSONArray();
         for (File file : files) {
             if(file.isFile()){
                 StringBuilder sb=new StringBuilder();
@@ -179,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         sb.append(str);
                     }
                     str=sb.toString();
+                    Log.d("CECSClient:data",Arrays.toString(str.getBytes()));
                     JSONObject jobject=new JSONObject();
                     jobject.put("data",str);
                     jobject.put("keywords","keyword");
