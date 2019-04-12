@@ -22,7 +22,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.security.KeyPair;
-import java.util.Arrays;
 
 import it.unisa.dia.gas.jpbc.Element;
 
@@ -96,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 try {
+                    long startTime = System.currentTimeMillis();
                     JSONObject jobject=new JSONObject();
                     jobject.put("request","uploading request");
                     jobject.put("PKO",Base64.encodeToString(keyPairO.getPublic().getEncoded(),Base64.NO_WRAP));
@@ -104,9 +104,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     //String path=editText.getText().toString();
                     String path="/sdcard/CECSClientData";
                     jobject.put("tuples",getTuples(path));
-                    Log.d("CECSClient",jobject.toString());
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
+                    br.readLine();
+                    long endTime = System.currentTimeMillis();
+                    Log.d("CECSClient:Uploading",(endTime-startTime)+"ms");
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -119,23 +121,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 try {
+                    long startTime = System.currentTimeMillis();
                     JSONObject jobject=new JSONObject();
                     jobject.put("request","sharing request");
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
-                    Log.d("CECSClient",jobject.toString());
                     String ck=br.readLine();
                     JSONArray CK=new JSONObject(ck).getJSONArray("CK");
                     JSONArray K=new JSONArray();
+                    long start = System.currentTimeMillis();
                     for(int i=0;i<CK.length();i++) {
                         ck=Base64.encodeToString(EncryptUtils.decryptRSA(Base64.decode(CK.getString(i), Base64.NO_WRAP), keyPairR.getPrivate()), Base64.NO_WRAP);
                         K.put(ck);
                     }
+                    long end = System.currentTimeMillis();
+                    Log.d("CECSClient:DecryptKey",(end-start)+"ms");
                     JSONObject k=new JSONObject();
                     k.put("K",K);
                     bw.write(k.toString()+"\n");
                     bw.flush();
                     String tuples=br.readLine();
+                    long endTime = System.currentTimeMillis();
+                    Log.d("CECSClient:Sharing",(endTime-startTime)+"ms");
                     show(tuples);
                 }
                 catch (Exception e){
@@ -149,14 +156,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 try {
+                    long startTime = System.currentTimeMillis();
                     JSONObject jobject=new JSONObject();
                     jobject.put("request","searching request");
+                    long start = System.currentTimeMillis();
                     Element TW=spchs.trapdoor(spchs.getS(),"keyword");
+                    long end = System.currentTimeMillis();
+                    Log.d("CECSClient:Trapdoor",(end-start)+"ms");
                     jobject.put("TW",Base64.encodeToString(TW.toBytes(),Base64.NO_WRAP));
-                    Log.d("CECSClient:TW",Arrays.toString(TW.toBytes()));
                     bw.write(jobject.toString()+"\n");
                     bw.flush();
-                    Log.d("CECSClient",jobject.toString());
                     String ck=br.readLine();
                     JSONArray CK=new JSONObject(ck).getJSONArray("CK");
                     JSONArray K=new JSONArray();
@@ -169,6 +178,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     bw.write(k.toString()+"\n");
                     bw.flush();
                     String tuples=br.readLine();
+                    long endTime = System.currentTimeMillis();
+                    Log.d("CECSClient:Searching",(endTime-startTime)+"ms");
                     show(tuples);
                 }
                 catch (Exception e){
@@ -197,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return null;
         }
         tuples=new JSONArray();
+        long sumTime=0;
         for (File file : files) {
             if(file.isFile()){
                 StringBuilder sb=new StringBuilder();
@@ -208,11 +220,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         sb.append(str);
                     }
                     str=sb.toString();
-                    Log.d("CECSClient:data",Arrays.toString(str.getBytes()));
                     JSONObject jobject=new JSONObject();
                     jobject.put("data",str);
                     jobject.put("keywords","keyword");
+                    long startTime = System.currentTimeMillis();
                     jobject.put("Sig",Base64.encodeToString(EncryptUtils.signature(str.getBytes(),keyPairO.getPrivate()),Base64.NO_WRAP));
+                    long endTime = System.currentTimeMillis();
+                    sumTime=sumTime+endTime-startTime;
                     tuples.put(jobject);
                     fis.close();
                 } catch (Exception e){
@@ -222,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 getTuples(file.getAbsolutePath());
             }
         }
+        Log.d("CECSClient:Sig:",sumTime+"ms");
         return tuples;
     }
 }

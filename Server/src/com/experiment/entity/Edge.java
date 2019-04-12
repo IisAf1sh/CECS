@@ -50,7 +50,6 @@ public class Edge{
 	            BufferedReader cbr = new BufferedReader(new InputStreamReader(client.getInputStream())); 
 	        	String str=cbr.readLine();
 	        	JSONObject jobject=new JSONObject(str);
-	        	System.out.println(jobject.toString());
 	        	spchs=new SPCHS();
 	        	spchs.setup();
 	        	Element g=spchs.getG1().newElement();
@@ -89,14 +88,15 @@ public class Edge{
             	String str;         
             	BufferedReader cbr = new BufferedReader(new InputStreamReader(client.getInputStream())); 
             	BufferedWriter cbw = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-            	System.out.println("readline");
             	while(true) {
 	            	str=cbr.readLine();
 	                JSONObject jobject = new JSONObject(str);
-	                System.out.println(jobject);
 	                String request = jobject.getString("request");
 	                switch(request){
 	                case "uploading request":
+	                	cbw.write("success\n");
+	                	cbw.flush();
+	                	long startTime=System.currentTimeMillis();
 	                	JSONArray jarray=encrypt(jobject);
 	                	String PKO=jobject.getString("PKO");
 	                	JSONObject jobject1=new JSONObject();
@@ -104,20 +104,21 @@ public class Edge{
 	                	jobject1.put("PKO",PKO);
 	                	jobject1.put("tuples",jarray);
 	                	Socket server1=new Socket("localhost",8888);
-	                	BufferedReader sbr1 = new BufferedReader(new InputStreamReader(server1.getInputStream())); 
+	                	BufferedReader sbr1 = new BufferedReader(new InputStreamReader(server1.getInputStream()));
 	                    BufferedWriter sbw1 = new BufferedWriter(new OutputStreamWriter(server1.getOutputStream()));
 	                    sbw1.write(jobject1.toString()+"\n");
 	                    sbw1.flush();
-	                    System.out.println(jobject1.toString());
+	                    sbr1.readLine();
+	                    long endTime = System.currentTimeMillis();
+	            		System.out.println("Uploading:"+(endTime-startTime)+"ms");
 			            break;
 	                case "sharing request":
 	                	Socket server2=new Socket("localhost",8888);
-	                	BufferedReader sbr2 = new BufferedReader(new InputStreamReader(server2.getInputStream())); 
+	                	BufferedReader sbr2 = new BufferedReader(new InputStreamReader(server2.getInputStream()));
 	                    BufferedWriter sbw2 = new BufferedWriter(new OutputStreamWriter(server2.getOutputStream()));
 	                    sbw2.write(str+"\n");
 	                    sbw2.flush();
 	                    str=sbr2.readLine();
-	                    System.out.println(str);
 	                    JSONObject jobject2=new JSONObject(str);
 	                    JSONArray jarray2=decrypt(jobject2,cbw,cbr);
 	                    jobject2=new JSONObject();
@@ -127,12 +128,11 @@ public class Edge{
 			            break;
 	                case "searching request":
 	                	Socket server3=new Socket("localhost",8888);
-	                	BufferedReader sbr3 = new BufferedReader(new InputStreamReader(server3.getInputStream())); 
+	                	BufferedReader sbr3 = new BufferedReader(new InputStreamReader(server3.getInputStream()));
 	                    BufferedWriter sbw3 = new BufferedWriter(new OutputStreamWriter(server3.getOutputStream()));
 	                    sbw3.write(str+"\n");
 	                    sbw3.flush();
 	                    str=sbr3.readLine();
-	                    System.out.println(str);
 	                    JSONObject jobject3=new JSONObject(str);
 	                    JSONArray jarray3=decrypt(jobject3,cbw,cbr);
 	                    jobject3=new JSONObject();
@@ -151,15 +151,14 @@ public class Edge{
         	PublicKey publicKey=EncryptUtils.string2PublicKey(PKR);
         	JSONArray jarray1=new JSONArray();
         	JSONArray jarray=jobject.getJSONArray("tuples");
+        	long startTime = System.currentTimeMillis();
         	for(int i=0;i<jarray.length();i++) {
         		jobject=jarray.getJSONObject(i);
-        		System.out.println(jobject.toString());
         		String data=jobject.getString("data");
         		String keyword=jobject.getString("keywords");
         		String Sig=jobject.getString("Sig");
         		JSONObject jobject1=new JSONObject();
         		JSONArray CW=new JSONArray();
-        		JSONObject peks=new JSONObject();
         		SecretKey secretKey= EncryptUtils.setupAES();
         		byte[] C=EncryptUtils.encryptAES(data.getBytes(), secretKey);
         		byte[] CK=EncryptUtils.encryptRSA(secretKey.getEncoded(), publicKey);
@@ -170,6 +169,8 @@ public class Edge{
         		jobject1.put("Sig", Sig);
         		jarray1.put(jobject1);
         	}
+        	long endTime = System.currentTimeMillis();
+    		System.out.println("Encrypt:"+(endTime-startTime)+"ms");
         	return jarray1;
         }
         private JSONArray decrypt(JSONObject jobject,BufferedWriter bw,BufferedReader br) throws IOException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeySpecException, SignatureException {
@@ -185,20 +186,21 @@ public class Edge{
         	bw.write(ck.toString()+"\n");
         	bw.flush();
     		String k=br.readLine();
-    		System.out.println(k);
     		jobject=new JSONObject(k);
     		JSONArray K=jobject.getJSONArray("K");
+    		long startTime = System.currentTimeMillis();
         	for(int i=0;i<jarray.length();i++) {
         		jobject=jarray.getJSONObject(i);
             	String PKO=jobject.getString("PKO");
         		String Sig=jobject.getString("Sig");
         		String C=jobject.getString("C");
         		byte[] data=EncryptUtils.decryptAES(Base64.getDecoder().decode(C.getBytes("UTF-8")), EncryptUtils.string2SecretKey(K.getString(i)));
-        		System.out.println("data"+Arrays.toString(data));
         		if(EncryptUtils.verify(data, EncryptUtils.string2PublicKey(PKO), Base64.getDecoder().decode(Sig.getBytes("UTF-8")))) {
         			jarray1.put(new JSONObject().put("data", new String(data)));
         		}
         	}
+        	long endTime = System.currentTimeMillis();
+    		System.out.println("Decrypt:"+(endTime-startTime)+"ms");
         	return jarray1;
         }
     }

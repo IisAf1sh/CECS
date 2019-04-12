@@ -42,7 +42,7 @@ public class SPCHS {
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
                 Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
                 Element C1=pairing.pairing(P,HW).powZn(u);
-                Element C2=g.powZn(r);
+                Element C2=g.duplicate().powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(Pt);
                 jobject.put("C1", Base64.encodeToString(C1.toBytes(),Base64.NO_WRAP));
                 jobject.put("C2",Base64.encodeToString(C2.toBytes(),Base64.NO_WRAP));
@@ -58,7 +58,7 @@ public class SPCHS {
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
                 Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
                 Element C1=Pt.duplicate();
-                Element C2=g.powZn(r);
+                Element C2=g.duplicate().powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(R);
                 Pt=R.duplicate();
                 jobject.put("C1", Base64.encodeToString(C1.toBytes(),Base64.NO_WRAP));

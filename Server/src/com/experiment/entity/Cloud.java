@@ -75,9 +75,11 @@ public class Cloud {
             	str=br.readLine();
                 JSONObject jobject = new JSONObject(str);
                 String request = jobject.getString("request");
-                System.out.println(request);
                 switch(request){
                 case "uploading request":
+                	bw.write("success\n");
+                	bw.flush();
+                	long startTime=System.currentTimeMillis();
                 	String PKO=jobject.getString("PKO");
                 	JSONArray jarray1=jobject.getJSONArray("tuples");
                 	for(int i=0;i<jarray1.length();i++) {
@@ -92,8 +94,9 @@ public class Cloud {
                 		jobject.put("PKO", PKO);
                 		tuples.add(jobject.toString());
                 		id++;
-                		System.out.println(jobject.toString());
                 	}
+                	long endTime = System.currentTimeMillis();
+            		System.out.println("Uploading:"+(endTime-startTime)+"ms");
 		            break;
                 case "sharing request":
                 	JSONArray jarray2=new JSONArray();
@@ -104,14 +107,14 @@ public class Cloud {
                 	jobject2.put("tuples", jarray2);
                 	bw.write(jobject2.toString()+"\n");
                 	bw.flush();
-                	System.out.println(jobject2.toString());
 		            break;
                 case "searching request":
                 	Element TW=spchs.getG1().newElement();
                 	TW.setFromBytes(Base64.getDecoder().decode(jobject.getString("TW").getBytes("UTF-8")));
-                	System.out.println("TW"+Arrays.toString(TW.toBytes()));
+                	long start = System.currentTimeMillis();
                 	ArrayList<Integer> ID=spchs.search(spchs.getPub(), peks, TW);
-                	System.out.println(ID.toString());
+                	long end = System.currentTimeMillis();
+            		System.out.println("Search:"+(end-start)+"ms");
                 	JSONArray jarray3=new JSONArray();
                 	for(int id:ID) {
                 		jarray3.put(new JSONObject(tuples.get(id)));
@@ -120,7 +123,6 @@ public class Cloud {
                 	jobject3.put("tuples", jarray3);
                 	bw.write(jobject3.toString()+"\n");
                 	bw.flush();
-                	System.out.println(jobject3.toString());
 		            break;
                 }
             } catch (Exception e) {

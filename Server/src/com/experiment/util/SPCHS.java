@@ -41,10 +41,9 @@ public class SPCHS {
             Pt=GT.newRandomElement().getImmutable();
             try{
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
-                Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
+                Element HW=G1.newElement().setFromHash(bytes,0, bytes.length).getImmutable();
                 Element C1=pairing.pairing(P,HW).powZn(u);
-                Element C2=g.powZn(r);
-                System.out.println("Pt"+pairing.pairing(P,HW).powZn(r).toString());
+                Element C2=g.duplicate().powZn(r);
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(Pt);
                 jobject.put("C1",new String(Base64.getEncoder().encode(C1.toBytes()),"UTF-8"));
                 jobject.put("C2",new String(Base64.getEncoder().encode(C2.toBytes()),"UTF-8"));
@@ -58,11 +57,9 @@ public class SPCHS {
             Element R=GT.newRandomElement().getImmutable();
             try{
                 byte[] bytes=EncryptUtils.hash(W.getBytes());
-                Element HW=G1.newElement().setFromHash(bytes,0, bytes.length);
+                Element HW=G1.newElement().setFromHash(bytes,0, bytes.length).getImmutable();
                 Element C1=Pt.duplicate();
-                System.out.println("C1"+C1.toString());
-                Element C2=g.powZn(r);
-                System.out.println("Pt"+pairing.pairing(P,HW).powZn(r).toString());
+                Element C2=g.duplicate().powZn(r).getImmutable();
                 Element C3=pairing.pairing(P,HW).powZn(r).mul(R);
                 Pt=R.duplicate();
                 jobject.put("C1",new String(Base64.getEncoder().encode(C1.toBytes()),"UTF-8"));
@@ -98,11 +95,9 @@ public class SPCHS {
                 C2.setFromBytes(Base64.getDecoder().decode(jobject.getString("C2").getBytes("UTF-8")));
                 Element C3=GT.newElement();
                 C3.setFromBytes(Base64.getDecoder().decode(jobject.getString("C3").getBytes("UTF-8")));
-                System.out.println("Pt"+pairing.pairing(C2,TW).toString());
                 Pt2=C3.div(pairing.pairing(C2,TW));
                 Element Pt=GT.newElement();
                 Pt.setFromBytes(Base64.getDecoder().decode(str));
-                System.out.println(Pt.toString());
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -110,7 +105,6 @@ public class SPCHS {
         }
         Element Pt=GT.newElement();
         Pt.setFromBytes(Base64.getDecoder().decode(str));
-        System.out.println(Pt.toString());
         return id;
     }
 
